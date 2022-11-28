@@ -26,6 +26,7 @@ __all__ = (
     "nth",
     "pairwise_cycle",
     "partitions",
+    "shift_cipher",
 )
 
 DELTAS_4 = (0, 1), (0, -1), (1, 0), (-1, 0)
@@ -235,3 +236,19 @@ def partitions(n, r):
     for i in range(n + 1):
         for j in partitions(n - i, r - 1):
             yield i, *j
+
+def shift_cipher(text, n):
+    """
+    Shift all letters in text.
+    """
+    def _shift_letter(letter):
+        if letter.isupper():
+            first_ord = ord("A")
+        elif letter.islower():
+            first_ord = ord("a")
+        else:
+            return letter
+
+        return chr(shiftmod(ord(letter) + n, 26, shift=first_ord))
+
+    return "".join(map(_shift_letter, text))
