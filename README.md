@@ -1,4 +1,4 @@
-# aoc_lube - Proper Advent of Code lubricant.
+# aoc_lube - Proper *Advent of Code* lubricant.
 
 Setting up aoc_lube
 ---------------------
