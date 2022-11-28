@@ -150,20 +150,15 @@ def _wait_for_unlock(year, day):
     if now < unlock:
         try:
             print("\x1b[?25l")  # Hide cursor.
-
             while True:
                 now = datetime.now().astimezone()
-
                 if (delay := (unlock - now).total_seconds()) <= 0:
                     break
-
                 bold_yellow_delay = f"\x1b[1m\x1b[33m{delay:.2f}\x1b[0m"
-
                 print(
                     f"Waiting {bold_yellow_delay} seconds for puzzle input to unlock...".ljust(50),
                     end="\r",
                 )
-
                 time.sleep(.1)
         finally:
             print("\x1b[?25h")  # Show cursor.
