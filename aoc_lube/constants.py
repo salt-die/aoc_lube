@@ -11,7 +11,7 @@ __all__ = (
     "URL",
 )
 
-CONFIG_DIR = Path.home() / ".aoc_helper"
+CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
     CONFIG_DIR.mkdir()
 

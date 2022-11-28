@@ -1,9 +1,9 @@
-# aoc_helper - Advent of Code fetch/submit with various utilities.
+# aoc_lube - Proper Advent of Code lubricant.
 
-Setting up aoc_helper
+Setting up aoc_lube
 ---------------------
-* Save your user token to `~/.aoc_helper/.token`.
-* [Optional] Create a new directory for your solutions. In this directory, run `aoc_helper.setup_dir`.
+* Save your user token to `~/.aoc_lube/.token`.
+* [Optional] Create a new directory for your solutions. In this directory, run `aoc_lube.setup_dir`.
 
 Getting your user token
 -----------------------
