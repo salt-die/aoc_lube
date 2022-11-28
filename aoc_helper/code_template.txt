@@ -1,0 +1,18 @@
+import aoc_helper
+
+RAW = aoc_helper.fetch(year={year}, day={day})
+print(RAW)
+
+def parse_raw():
+    ...
+
+DATA = parse_raw()
+
+def part_one():
+    ...
+
+def part_two():
+    ...
+
+aoc_helper.submit(year={year}, day={day}, part=1, solution=part_one)
+aoc_helper.submit(year={year}, day={day}, part=2, solution=part_two)
