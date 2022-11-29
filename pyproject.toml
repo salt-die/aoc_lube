@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aoc_lube"
+description = "Proper Advent of Code lubricant."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Unlicense"}
+authors = [{name = "salt-die", email = "salt-die@protonmail.com"}]
+urls = {"repository" = "https://github.com/salt-die/aoc_lube"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "bs4",
+    "requests",
+    "tomlkit",
+]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "aoc_lube.__version__"}
+
+[project.optional-dependencies]
+utils = ["networkx", "numpy"]

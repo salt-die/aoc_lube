@@ -2,6 +2,7 @@
 
 Setting up aoc_lube
 ---------------------
+* `pip install aoc-lube` for just `fetch` and `submit` functions or `pip install aoc_lube[utils]` for optional dependencies (networkx, numpy) for utility functions.
 * Save your user token to `~/.aoc_lube/.token`.
 * [Optional] Create a new directory for your solutions. In this directory, run `aoc_lube.setup_dir`.
 
