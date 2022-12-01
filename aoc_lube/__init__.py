@@ -1,7 +1,7 @@
 import re
 import time
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -9,7 +9,6 @@ import bs4
 import requests
 import tomlkit
 
-from .constants import *
 from . import utils
 
 __all__ = (
@@ -19,14 +18,46 @@ __all__ = (
     "utils",
 )
 
+__version__ = "0.2.4"
+
+CONFIG_DIR = Path.home() / ".aoc_lube"
+if not CONFIG_DIR.exists():
+    CONFIG_DIR.mkdir()
+
+HEADERS = {"User-Agent": f"github.com/salt-die/aoc_lube v{__version__} by salt-die@protonmail.com"}
+INPUTS_FILE = "inputs.toml"
+SUBMISSIONS_FILE = "submissions.toml"
+TEMPLATE_FILE = Path(__file__).parent / "code_template.txt"
+TOKEN_FILE =  CONFIG_DIR / ".token"
+# AoC puzzle inputs unlock at midnight -5 UTC during month of December.
+UNLOCK_TIME_INFO = dict(
+    month=12,
+    hour=0,
+    minute=0,
+    second=5,
+    microsecond=0,
+    tzinfo=timezone(timedelta(hours=-5), 'Eastern US'),
+)
+URL = "https://adventofcode.com/{year}/day/{day}"
+
+# Ansi Escapes
+RED = "\x1b[31m"
+GREEN = "\x1b[32m"
+YELLOW = "\x1b[33m"
+BLUE = "\x1b[34m"
+BOLD = "\x1b[1m"
+RESET = "\x1b[0m"
+HIDE_CURSOR = "\x1b[?25l"
+SHOW_CURSOR = "\x1b[?25h"
+
 try:
     TOKEN = {"session": TOKEN_FILE.read_text().strip()}
 except FileNotFoundError:
     print(
-        "\n\x1b[1m\x1b[31m::WARNING::\x1b[0m\n\n"
-        f"Token not found at \x1b[34m{TOKEN_FILE.absolute()}\x1b[0m.\n"
+        f"\n{BOLD}{RED}::WARNING::{RESET}\n\n"
+        f"Token not found at {BLUE}{TOKEN_FILE.absolute()}{RESET}.\n"
         "`fetch` and `submit` functions will fail without a user token.\n"
-        "See \x1b[33mREADME\x1b[0m for instructions on how to get your user token.\n"
+        f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n"
     )
 
 def setup_dir(year: int):
@@ -122,14 +153,13 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
 
             timeout = 60 * int(minutes or 0) + int(seconds)
             try:
-                print("\x1b[?25l")  # Hide cursor.
+                print(HIDE_CURSOR)
                 while timeout > 0:
-                    bold_yellow_delay = f"\x1b[1m\x1b[33m{timeout}\x1b[0m"
-                    print(f"Waiting {bold_yellow_delay} seconds to retry...".ljust(50), end="\r")
+                    print(f"Waiting {BOLD}{YELLOW}{timeout}{RESET} seconds to retry...".ljust(50), end="\r")
                     timeout -= 1
                     time.sleep(1)
             finally:
-                print("\x1b[?25h")  # Show cursor.
+                print(SHOW_CURSOR)
         else:
             break
 
@@ -156,38 +186,31 @@ def _wait_for_unlock(year, day):
 
     if now < unlock:
         try:
-            print("\x1b[?25l")  # Hide cursor.
+            print(HIDE_CURSOR)
             while True:
                 now = datetime.now().astimezone()
                 if (delay := (unlock - now).total_seconds()) <= 0:
                     break
-                bold_yellow_delay = f"\x1b[1m\x1b[33m{delay:.2f}\x1b[0m"
                 print(
-                    f"Waiting {bold_yellow_delay} seconds for puzzle input to unlock...".ljust(50),
+                    f"Waiting {BOLD}{YELLOW}{delay:.2f}{RESET} seconds for puzzle input to unlock...".ljust(50),
                     end="\r",
                 )
                 time.sleep(.1)
         finally:
-            print("\x1b[?25h")  # Show cursor.
+            print(SHOW_CURSOR)
 
 def _pretty_print(message):
     match message[7]:
         case "t":
             # "That's the right answer! ..."
-            COLOR = "\x1b[32m"  # Green
+            COLOR = GREEN
         case "'" | "e":
             # "You don't seem to be solving the right level. ..."
             # "You gave an answer too recently; you have to wait ..."
-            COLOR = "\x1b[33m"  # Yellow
+            COLOR = YELLOW
         case "n":
             # "That's not the right answer. If you're stuck, ..."
-            COLOR = "\x1b[31m"  # Red
+            COLOR = RED
         case _:
             raise ValueError("Unexpected message.", message)
-    print(
-        "\x1b[1m",  # Bold
-        COLOR,
-        message,
-        "\x1b[0m",  # Reset
-        sep="",
-    )
+    print(f"{BOLD}{COLOR}{message}{RESET}")
