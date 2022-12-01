@@ -12,8 +12,6 @@ import tomlkit
 from .constants import *
 from . import utils
 
-__version__ = "0.2.1"
-
 __all__ = (
     "setup_dir",
     "fetch",
@@ -61,7 +59,7 @@ def fetch(year: int, day: int) -> str:
     if str(day) not in inputs:
         _wait_for_unlock(year, day)
 
-        response = requests.get(url=URL.format(year=year, day=day) + "/input", cookies=TOKEN)
+        response = requests.get(url=URL.format(year=year, day=day) + "/input", headers=HEADERS, cookies=TOKEN)
         if not response.ok:
             raise ValueError("Request failed.")
 
@@ -108,8 +106,9 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
         print(f"Submitting {answer} as solution to part {part}:")
         response = requests.post(
             url=URL.format(year=year, day=day) + "/answer",
+            data={"level": part, "answer": answer},
+            headers=HEADERS,
             cookies=TOKEN,
-            data={"level": part, "answer": answer}
         )
 
         if not response.ok:
@@ -136,6 +135,14 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
 
     if message[7] == "t":  # "That's the right answer! ..."
         current["solution"] = answer
+
+        if day == 25:  # Automatically submit part 2 on day 25.
+            response = requests.post(
+                url=URL.format(year=year, day=day) + "/answer",
+                data={"level": 2, "answer": ""},
+                headers=HEADERS,
+                cookies=TOKEN,
+            )
 
         if part == 1:
             webbrowser.open(response.url)  # View part 2 in browser
