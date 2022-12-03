@@ -254,7 +254,7 @@ def shift_cipher(text, n):
 
     return "".join(map(_shift_letter, text))
 
-def split(sequence, n):
+def split(sequence, n=2):
     """
     Splits a sequence into `n` equal parts. `n`
     is assumed to divide the length of the sequence.
