@@ -27,6 +27,7 @@ __all__ = (
     "pairwise_cycle",
     "partitions",
     "shift_cipher",
+    "distribute",
 )
 
 DELTAS_4 = (0, 1), (0, -1), (1, 0), (-1, 0)
@@ -252,3 +253,11 @@ def shift_cipher(text, n):
         return chr(shiftmod(ord(letter) + n, 26, shift=first_ord))
 
     return "".join(map(_shift_letter, text))
+
+def split(sequence, n):
+    """
+    Splits a sequence into `n` equal parts. `n`
+    is assumed to divide the length of the sequence.
+    """
+    l = len(sequence) // n
+    return (sequence[i * l: (i + 1) * l] for i in range(n))
