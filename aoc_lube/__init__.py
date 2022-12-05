@@ -18,7 +18,7 @@ __all__ = (
     "utils",
 )
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
@@ -95,7 +95,7 @@ def fetch(year: int, day: int) -> str:
             raise ValueError("Request failed.")
 
         # Save input data
-        inputs[str(day)] = response.text.strip()
+        inputs[str(day)] = response.text.rstrip()
         input_file.write_text(tomlkit.dumps(inputs))
 
     return inputs[str(day)]
