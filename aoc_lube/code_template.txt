@@ -3,7 +3,7 @@ import aoc_lube
 RAW = aoc_lube.fetch(year={year}, day={day})
 print(RAW)
 
-def parse_raw(RAW):
+def parse_raw(RAW: str):
     ...
 
 DATA = parse_raw(RAW)
