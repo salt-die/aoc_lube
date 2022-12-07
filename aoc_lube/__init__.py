@@ -18,7 +18,7 @@ __all__ = (
     "utils",
 )
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():

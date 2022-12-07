@@ -24,5 +24,8 @@ dynamic = ["version"]
 [tool.setuptools.dynamic]
 version = {attr = "aoc_lube.__version__"}
 
+[tool.setuptools.package-data]
+aoc_lube = ["*.txt"]
+
 [project.optional-dependencies]
 utils = ["networkx >= 2.8.8", "numpy >= 1.23.4"]
