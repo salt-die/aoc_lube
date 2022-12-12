@@ -5,11 +5,11 @@ Requirements:
 * networkx
 * numpy
 """
+from enum import Enum
+
 __all__ = (
-    "DELTAS_4",
-    "DELTAS_5",
-    "DELTAS_8",
-    "DELTAS_9",
+    "Deltas",
+    "inbounds_steps",
     "extract_ints",
     "chunk",
     "extract_maze",
@@ -30,10 +30,30 @@ __all__ = (
     "distribute",
 )
 
-DELTAS_4 = (0, 1), (0, -1), (1, 0), (-1, 0)
-DELTAS_5 = DELTAS_4 + ((0, 0),)
-DELTAS_8 = DELTAS_4 + ((1, 1), (-1, -1), (1, -1), (-1, 1))
-DELTAS_9 = DELTAS_8 + ((0, 0),)
+
+class Deltas(Enum):
+    """
+    Deltas for discrete 2D neighborhoods.
+    """
+    FOUR = (0, 1), (0, -1), (1, 0), (-1, 0)
+    FIVE = FOUR + ((0, 0),)
+    EIGHT = FOUR + ((1, 1), (-1, -1), (1, -1), (-1, 1))
+    NINE = EIGHT + ((0, 0),)
+
+
+def inbounds_steps(deltas: Deltas, height, width):
+    """
+    Yield all steps ((y, x), (y + dy, x + dx)) with dy, dx given
+    by deltas such that (y, x) and (y + dy, x + dx) are with (height, width).
+    """
+    for y in range(height):
+        for x in range(width):
+            for dy, dx in deltas.value:
+                new_y = y + dy
+                new_x = x + dx
+
+                if 0 <= new_y < height and 0 <= new_x < width:
+                    yield (y, x), (new_y, new_x)
 
 def extract_ints(raw: str):
     """
