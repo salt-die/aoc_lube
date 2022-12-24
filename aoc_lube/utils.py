@@ -39,14 +39,14 @@ class Deltas:
     NINE = EIGHT + ((0, 0),)
 
 
-def inbounds_steps(deltas: Deltas, height, width):
+def inbounds_steps(deltas, height, width):
     """
     Yield all steps ((y, x), (y + dy, x + dx)) with dy, dx given
-    by deltas such that (y, x) and (y + dy, x + dx) are with (height, width).
+    by deltas such that (y, x) and (y + dy, x + dx) are within (height, width).
     """
     for y in range(height):
         for x in range(width):
-            for dy, dx in deltas.value:
+            for dy, dx in deltas:
                 new_y = y + dy
                 new_x = x + dx
 
