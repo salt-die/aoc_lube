@@ -5,8 +5,6 @@ Requirements:
 * networkx
 * numpy
 """
-from enum import Enum
-
 __all__ = (
     "Deltas",
     "inbounds_steps",
@@ -31,7 +29,7 @@ __all__ = (
 )
 
 
-class Deltas(Enum):
+class Deltas:
     """
     Deltas for discrete 2D neighborhoods.
     """
