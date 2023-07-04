@@ -25,6 +25,7 @@ __all__ = (
     "pairwise_cycle",
     "partitions",
     "shift_cipher",
+    "split",
     "distribute",
 )
 
@@ -279,3 +280,12 @@ def split(sequence, n=2):
     """
     l = len(sequence) // n
     return (sequence[i * l: (i + 1) * l] for i in range(n))
+
+def distribute(iterable, n):
+    """
+    Distribute an iterable amoung `n` smaller iterables.
+    """
+    from itertools import tee, islice
+
+    children = tee(iterable, n)
+    return [islice(it, index, None, n) for index, it in enumerate(children)]
