@@ -27,5 +27,19 @@ version = {attr = "aoc_lube.__version__"}
 [tool.setuptools.package-data]
 aoc_lube = ["*.txt"]
 
+[tool.ruff.lint]
+select = [
+    "D",  # pydocstyle
+    "F",  # pyflakes
+    "E",  # pycodestyle - error
+    "W",  # pycodestyle - warning
+    "I",  # isort
+]
+ignore = [
+    "D205",  # blank-line-after-summary -- This rule seems bugged for summaries that need more than one line.
+]
+
+fixable = ["ALL"]
+
 [project.optional-dependencies]
 utils = ["networkx >= 2.8.8", "numpy >= 1.23.4"]

@@ -1,7 +1,9 @@
+"""Propert Advent of Code lubricant."""
+
 import re
 import time
 import webbrowser
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -11,12 +13,7 @@ import tomlkit
 
 from . import utils
 
-__all__ = (
-    "setup_dir",
-    "fetch",
-    "submit",
-    "utils",
-)
+__all__ = ["setup_dir", "fetch", "submit", "utils"]
 
 __version__ = "0.2.7"
 
@@ -24,11 +21,15 @@ CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
     CONFIG_DIR.mkdir()
 
-HEADERS = {"User-Agent": f"github.com/salt-die/aoc_lube v{__version__} by salt-die@protonmail.com"}
+HEADERS = {
+    "User-Agent": (
+        f"github.com/salt-die/aoc_lube v{__version__} by salt-die@protonmail.com"
+    )
+}
 INPUTS_FILE = "inputs.toml"
 SUBMISSIONS_FILE = "submissions.toml"
 TEMPLATE_FILE = Path(__file__).parent / "code_template.txt"
-TOKEN_FILE =  CONFIG_DIR / ".token"
+TOKEN_FILE = CONFIG_DIR / ".token"
 # AoC puzzle inputs unlock at midnight -5 UTC during month of December.
 UNLOCK_TIME_INFO = dict(
     month=12,
@@ -36,7 +37,7 @@ UNLOCK_TIME_INFO = dict(
     minute=0,
     second=5,
     microsecond=0,
-    tzinfo=timezone(timedelta(hours=-5), 'Eastern US'),
+    tzinfo=timezone(timedelta(hours=-5), "Eastern US"),
 )
 URL = "https://adventofcode.com/{year}/day/{day}"
 
@@ -60,10 +61,9 @@ except FileNotFoundError:
         f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n"
     )
 
-def setup_dir(year: int):
-    """
-    Run once to setup directory with templates for daily solutions.
-    """
+
+def setup_dir(year: int) -> None:
+    """Run once to setup directory with templates for daily solutions."""
     template = TEMPLATE_FILE.read_text()
 
     for day in range(1, 26):
@@ -72,16 +72,20 @@ def setup_dir(year: int):
         if not file.exists():
             file.write_text(template.format(year=year, day=day))
 
+
 def _ensure(path):
+    """Ensure a path exists."""
     if not path.parent.exists():
         path.parent.mkdir()
 
     if not path.exists():
         path.touch()
 
+
 def fetch(year: int, day: int) -> str:
-    """
-    Fetch puzzle input. Inputs are cached.
+    """Fetch puzzle input.
+
+    Inputs are cached so that an input can't be re-fetched.
     """
     input_file = CONFIG_DIR / f"{year}" / INPUTS_FILE
     _ensure(input_file)
@@ -90,7 +94,11 @@ def fetch(year: int, day: int) -> str:
     if str(day) not in inputs:
         _wait_for_unlock(year, day)
 
-        response = requests.get(url=URL.format(year=year, day=day) + "/input", headers=HEADERS, cookies=TOKEN)
+        response = requests.get(
+            url=URL.format(year=year, day=day) + "/input",
+            headers=HEADERS,
+            cookies=TOKEN,
+        )
         if not response.ok:
             raise ValueError("Request failed.")
 
@@ -100,9 +108,13 @@ def fetch(year: int, day: int) -> str:
 
     return inputs[str(day)]
 
-def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_check=True):
-    """
-    Submit a solution. Submissions are cached.
+
+def submit(
+    year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_check=True
+) -> None:
+    """Submit a solution.
+
+    Submissions are cached so that the same solution can't be resubmitted.
     """
     submissions_file = CONFIG_DIR / f"{year}" / SUBMISSIONS_FILE
     _ensure(submissions_file)
@@ -123,14 +135,14 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
     answer = str(answer)
 
     if answer in current:
-        print(f"Solution {answer} to part {part} has already been submitted, response was:")
+        print(
+            f"Solution {answer} to part {part} has already been submitted,"
+            " response was:"
+        )
         _pretty_print(current[answer])
         return
 
-    if (
-        sanity_check
-        and input(f"Submit {answer}? [y]/n\n").startswith(("n", "N"))
-    ):
+    if sanity_check and input(f"Submit {answer}? [y]/n\n").startswith(("n", "N")):
         return
 
     while True:
@@ -155,7 +167,11 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
             try:
                 print(HIDE_CURSOR)
                 while timeout > 0:
-                    print(f"Waiting {BOLD}{YELLOW}{timeout}{RESET} seconds to retry...".ljust(50), end="\r")
+                    print(
+                        f"Waiting {BOLD}{YELLOW}{timeout}{RESET} seconds to "
+                        "retry...".ljust(50),
+                        end="\r",
+                    )
                     timeout -= 1
                     time.sleep(1)
             finally:
@@ -180,7 +196,9 @@ def submit(year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_
     current[answer] = message
     submissions_file.write_text(tomlkit.dumps(submissions))
 
+
 def _wait_for_unlock(year, day):
+    """Display a countdown in the terminal to when puzzle input is available."""
     now = datetime.now().astimezone()
     unlock = datetime(year=year, day=day, **UNLOCK_TIME_INFO)
 
@@ -192,25 +210,28 @@ def _wait_for_unlock(year, day):
                 if (delay := (unlock - now).total_seconds()) <= 0:
                     break
                 print(
-                    f"Waiting {BOLD}{YELLOW}{delay:.2f}{RESET} seconds for puzzle input to unlock...".ljust(50),
+                    f"Waiting {BOLD}{YELLOW}{delay:.2f}{RESET} seconds for puzzle input"
+                    " to unlock...".ljust(50),
                     end="\r",
                 )
-                time.sleep(.1)
+                time.sleep(0.1)
         finally:
             print(SHOW_CURSOR)
 
+
 def _pretty_print(message):
+    """Color submission response."""
     match message[7]:
         case "t":
             # "That's the right answer! ..."
-            COLOR = GREEN
+            color = GREEN
         case "'" | "e":
             # "You don't seem to be solving the right level. ..."
             # "You gave an answer too recently; you have to wait ..."
-            COLOR = YELLOW
+            color = YELLOW
         case "n":
             # "That's not the right answer. If you're stuck, ..."
-            COLOR = RED
+            color = RED
         case _:
             raise ValueError("Unexpected message.", message)
-    print(f"{BOLD}{COLOR}{message}{RESET}")
+    print(f"{BOLD}{color}{message}{RESET}")
