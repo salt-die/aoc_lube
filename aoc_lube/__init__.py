@@ -15,7 +15,7 @@ from . import utils
 
 __all__ = ["setup_dir", "fetch", "submit", "utils"]
 
-__version__ = "0.2.7"
+__version__ = "1.0.0"
 
 CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
