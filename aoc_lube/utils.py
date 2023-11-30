@@ -259,3 +259,20 @@ def distribute(iterable, n):
 
     children = tee(iterable, n)
     return [islice(it, index, None, n) for index, it in enumerate(children)]
+
+
+def spiral_grid():
+    """Yield 2D coordinates spiraling around the origin."""
+    x = y = 0
+    d = m = 1
+    while True:
+        while 2 * x * d < m:
+            yield x, y
+            x = x + d
+
+        while 2 * y * d < m:
+            yield x, y
+            y = y + d
+
+        d *= -1
+        m += 1
