@@ -1,17 +1,16 @@
-"""Setup directory from command line with `python -m aoc_lube [YYYY]`."""
-import datetime
-import sys
+"""Setup directory from command line with
+`python -m aoc_lube [-y YEAR] [-t TEMPLATE]`.
+"""
+import argparse
+from pathlib import Path
 
 from . import setup_dir
 
-try:
-    _, year, *rest = sys.argv
-except ValueError:
-    setup_dir(datetime.date.today().year)
-else:
-    if not year.isdigit():
-        print(f"What is year {year}?")
-    elif rest:
-        print(f"Extra argument(s) not recognized: {rest}")
-    else:
-        setup_dir(int(year))
+parser = argparse.ArgumentParser(
+    prog="python -m aoc_lube", description="Setup a directory for Advent of Code."
+)
+parser.add_argument("-y", "--year", help="Advent of Code year.", default=None)
+parser.add_argument("-t", "--template", help="A code template file.", default=None)
+args = parser.parse_args()
+
+setup_dir(args.year, args.template if args.template is None else Path(args.template))

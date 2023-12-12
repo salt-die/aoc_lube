@@ -4,7 +4,7 @@ import re
 import subprocess
 import time
 import webbrowser
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -62,24 +62,23 @@ except FileNotFoundError:
     )
 
 
-def setup_dir(year: int | None = None, template: str | Path | None = None) -> None:
+def setup_dir(year: int | None = None, template: Path | None = None) -> None:
     r"""Run once to setup directory with templates for daily solutions.
 
-    A file or text can be provided as a template. The template must be a format
-    string with `year` and `day` keyword arguments, e.g.::
-
-        "import aoc_lube\ntodays_input = aoc_lube.fetch({year}, {day})"
-
-    If no template is provided, the default one is used instead.
+    A file can be provided as a template. The file's text should be able to be formatted
+    with `year` and `day` keyword arguments. See `code_template.txt` (the default
+    template) as an example.
     """
+    if year is None:
+        year = date.today().year
+
     if template is None:
         template = TEMPLATE_FILE.read_text()
-    elif isinstance(template, Path):
+    else:
         template = template.read_text()
 
     for day in range(1, 26):
         file = Path(f"day_{day:02}.py")
-
         if not file.exists():
             file.write_text(template.format(year=year, day=day))
 
