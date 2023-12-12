@@ -1,6 +1,7 @@
 """Propert Advent of Code lubricant."""
 
 import re
+import subprocess
 import time
 import webbrowser
 from datetime import datetime, timedelta, timezone
@@ -15,7 +16,7 @@ from . import utils
 
 __all__ = ["setup_dir", "fetch", "submit", "utils"]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
@@ -26,7 +27,6 @@ HEADERS = {
         f"github.com/salt-die/aoc_lube v{__version__} by salt-die@protonmail.com"
     )
 }
-INPUTS_FILE = "inputs.toml"
 SUBMISSIONS_FILE = "submissions.toml"
 TEMPLATE_FILE = Path(__file__).parent / "code_template.txt"
 TOKEN_FILE = CONFIG_DIR / ".token"
@@ -62,9 +62,20 @@ except FileNotFoundError:
     )
 
 
-def setup_dir(year: int) -> None:
-    """Run once to setup directory with templates for daily solutions."""
-    template = TEMPLATE_FILE.read_text()
+def setup_dir(year: int | None = None, template: str | Path | None = None) -> None:
+    r"""Run once to setup directory with templates for daily solutions.
+
+    A file or text can be provided as a template. The template must be a format
+    string with `year` and `day` keyword arguments, e.g.::
+
+        "import aoc_lube\ntodays_input = aoc_lube.fetch({year}, {day})"
+
+    If no template is provided, the default one is used instead.
+    """
+    if template is None:
+        template = TEMPLATE_FILE.read_text()
+    elif isinstance(template, Path):
+        template = template.read_text()
 
     for day in range(1, 26):
         file = Path(f"day_{day:02}.py")
@@ -73,25 +84,32 @@ def setup_dir(year: int) -> None:
             file.write_text(template.format(year=year, day=day))
 
 
-def _ensure(path):
-    """Ensure a path exists."""
-    if not path.parent.exists():
-        path.parent.mkdir()
+def _fix_old_inputs(year: int) -> bool:
+    input_file = CONFIG_DIR / f"{year}" / "inputs.toml"
 
-    if not path.exists():
-        path.touch()
+    if input_file.exists():
+        inputs = tomlkit.loads(input_file.read_text())
+        for day, input_ in inputs.items():
+            (input_file.parent / f"{int(day):02}.txt").write_text(input_)
+
+        input_file.unlink()
 
 
-def fetch(year: int, day: int) -> str:
+def fetch(year: int, day: int, open_with: Literal["vscode"] | None = None) -> str:
     """Fetch puzzle input.
 
-    Inputs are cached so that an input can't be re-fetched.
+    Inputs are cached so that an input won't be re-fetched. The `open_with` parameter
+    can be used to open the fetched input as a separate file in your IDE/text editor.
     """
-    input_file = CONFIG_DIR / f"{year}" / INPUTS_FILE
-    _ensure(input_file)
-    inputs = tomlkit.loads(input_file.read_text())
+    _fix_old_inputs(year)
 
-    if str(day) not in inputs:
+    input_file = CONFIG_DIR / f"{year}" / f"{day:02}.txt"
+    if not input_file.parent.exists():
+        input_file.mkdir()
+
+    if input_file.exists():
+        input_ = input_file.read_text()
+    else:
         _wait_for_unlock(year, day)
 
         response = requests.get(
@@ -102,11 +120,15 @@ def fetch(year: int, day: int) -> str:
         if not response.ok:
             raise ValueError("Request failed.")
 
-        # Save input data
-        inputs[str(day)] = response.text.rstrip()
-        input_file.write_text(tomlkit.dumps(inputs))
+        input_ = response.text.rstrip()
+        input_file.write_text(input_)
 
-    return inputs[str(day)]
+    if open_with is not None:
+        # Open an issue to add a command to open the input file in your favorite editor.
+        editors = {"vscode": ["code", "-r"]}
+        subprocess.run([*editors[open_with], input_file], shell=True)
+
+    return input_
 
 
 def submit(
@@ -114,10 +136,13 @@ def submit(
 ) -> None:
     """Submit a solution.
 
-    Submissions are cached so that the same solution can't be resubmitted.
+    Submissions are cached so that the same solution won't be resubmitted.
     """
     submissions_file = CONFIG_DIR / f"{year}" / SUBMISSIONS_FILE
-    _ensure(submissions_file)
+    if not submissions_file.parent.exists():
+        submissions_file.parent.mkdir()
+    if not submissions_file.exists():
+        submissions_file.touch()
     submissions = tomlkit.loads(submissions_file.read_text())
     current = submissions.setdefault(str(day), {}).setdefault(str(part), {})
 
