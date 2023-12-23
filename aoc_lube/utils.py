@@ -75,7 +75,7 @@ def extract_maze(raw: str, wall="#", largest_component=False):
     max_width = max(map(len, lines))
     maze = np.array([list(line + " " * (max_width - len(line))) for line in lines])
 
-    G = nx.grid_graph(maze.shape)
+    G = nx.grid_graph(maze.shape[::-1])
 
     walls = np.stack(np.where(maze == wall)).T
     G.remove_nodes_from(map(tuple, walls))
