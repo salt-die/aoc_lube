@@ -36,6 +36,8 @@ select = [
     "I",  # isort
 ]
 ignore = [
+    "D105",  # undocumented-magic-method
+    "D107",  # Missing docstring in `__init__`
     "D205",  # blank-line-after-summary -- This rule seems bugged for summaries that need more than one line.
 ]
 
