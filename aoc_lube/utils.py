@@ -1,28 +1,31 @@
 """Helpful functions for AoC.
 
-Imports are deferred so that this file is loads faster. Requires `networkx` and `numpy`.
+Imports are deferred so that this file loads faster. Requires `networkx` and `numpy`.
 """
+
 __all__ = [
     "GRID_NEIGHBORHOODS",
+    "Point",
+    "chinese_remainder_theorem",
+    "chunk",
+    "distribute",
+    "dot_print",
     "grid_steps",
     "extract_ints",
-    "chunk",
     "extract_maze",
-    "maximum_matching",
-    "chinese_remainder_theorem",
-    "pairwise",
-    "sliding_window",
-    "sliding_window_cycle",
-    "oscillate_range",
-    "int_grid",
-    "dot_print",
-    "shiftmod",
     "ilen",
+    "int_grid",
+    "maximum_matching",
     "nth",
+    "oscillate_range",
+    "pairwise",
     "partitions",
     "shift_cipher",
+    "shiftmod",
+    "sliding_window",
+    "sliding_window_cycle",
+    "spiral_grid",
     "split",
-    "distribute",
 ]
 
 GRID_NEIGHBORHOODS = {
@@ -31,6 +34,75 @@ GRID_NEIGHBORHOODS = {
     8: [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)],
     9: [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)],
 }
+
+
+class Point:
+    """A 2D point."""
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point(x={self.x}, y={self.y})"
+
+    def __iter__(self):
+        yield self.x
+        yield self.y
+
+    def __add__(self, other):
+        return Point(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Point(self.x - other.x, self.y - other.y)
+
+    def __neg__(self):
+        return Point(-self.x, -self.y)
+
+    def __iadd__(self, other):
+        self.x += other.x
+        self.y += other.y
+        return self
+
+    def __isub__(self, other):
+        self.x -= other.x
+        self.y -= other.y
+        return self
+
+
+def chinese_remainder_theorem(moduli, residues):
+    """Find the solution to a system of modular equations."""
+    from math import prod
+
+    N = prod(moduli)
+
+    return (
+        sum(
+            (div := (N // modulus)) * pow(div, -1, modulus) * residue
+            for modulus, residue in zip(moduli, residues)
+        )
+        % N
+    )
+
+
+def chunk(it, n: int):
+    """Chunk an iterable into non-overlapping fixed sized pieces."""
+    args = [iter(it)] * n
+    return zip(*args, strict=True)
+
+
+def distribute(iterable, n):
+    """Distribute an iterable amoung `n` smaller iterables."""
+    from itertools import islice, tee
+
+    children = tee(iterable, n)
+    return [islice(it, index, None, n) for index, it in enumerate(children)]
+
+
+def dot_print(array):
+    """Pretty print a binary or boolean array."""
+    for row in array:
+        print("".join(" #"[i] for i in row))
 
 
 def grid_steps(neighborhood, height, width):
@@ -58,12 +130,6 @@ def extract_ints(raw: str):
     return map(int, re.findall(r"(-?\d+)", raw))
 
 
-def chunk(it, n: int):
-    """Chunk an iterable into non-overlapping fixed sized pieces."""
-    args = [iter(it)] * n
-    return zip(*args, strict=True)
-
-
 def extract_maze(raw: str, wall="#", largest_component=False):
     """Parse an ascii maze into a networkx graph. Return a tuple
     `(np.array, nx.Graph)`.
@@ -88,6 +154,29 @@ def extract_maze(raw: str, wall="#", largest_component=False):
     return maze, G
 
 
+def ilen(iterable):
+    """Return number of items in `iterable`.
+
+    This will consume the iterable.
+    """
+    return sum(1 for _ in iterable)
+
+
+def int_grid(raw, np=True, separator=""):
+    """Parse a grid of ints into a 2d list or numpy array (if np==True)."""
+    array = [
+        [int(i) for i in (line.split(separator) if separator else line) if i]
+        for line in raw.splitlines()
+    ]
+
+    if np:
+        import numpy as np
+
+        return np.array(array)
+
+    return array
+
+
 def maximum_matching(items: dict[list]):
     """Return a maximum matching from a dict of lists."""
     import networkx as nx
@@ -99,46 +188,11 @@ def maximum_matching(items: dict[list]):
             yield k, v
 
 
-def chinese_remainder_theorem(moduli, residues):
-    """Find the solution to a system of modular equations."""
-    from math import prod
+def nth(iterable, n):
+    """Return nth item of `iterable`."""
+    from itertools import islice
 
-    N = prod(moduli)
-
-    return (
-        sum(
-            (div := (N // modulus)) * pow(div, -1, modulus) * residue
-            for modulus, residue in zip(moduli, residues)
-        )
-        % N
-    )
-
-
-def pairwise(iterable, offset=1):
-    """Return successive pairs from an iterable separated by `offset`."""
-    from itertools import islice, tee
-
-    a, b = tee(iterable)
-
-    return zip(a, islice(b, offset, None))
-
-
-def sliding_window(iterable, length=2):
-    """Return a sliding window over an iterable."""
-    from itertools import islice, tee
-
-    its = (islice(it, i, None) for i, it in enumerate(tee(iterable, length)))
-
-    return zip(*its)
-
-
-def sliding_window_cycle(iterable, length=2):
-    """Return a sliding window over an iterable that wraps around."""
-    from itertools import chain, islice
-
-    it = iter(iterable)
-    start = tuple(islice(it, length - 1))
-    return sliding_window(chain(start, it, start), length)
+    return next(islice(iterable, n, None))
 
 
 def oscillate_range(start=None, stop=None, step=None, /):
@@ -167,55 +221,13 @@ def oscillate_range(start=None, stop=None, step=None, /):
         n += 1
 
 
-def int_grid(raw, np=True, separator=""):
-    """Parse a grid of ints into a 2d list or numpy array (if np==True)."""
-    array = [
-        [int(i) for i in (line.split(separator) if separator else line) if i]
-        for line in raw.splitlines()
-    ]
+def pairwise(iterable, offset=1):
+    """Return successive pairs from an iterable separated by `offset`."""
+    from itertools import islice, tee
 
-    if np:
-        import numpy as np
+    a, b = tee(iterable)
 
-        return np.array(array)
-
-    return array
-
-
-def dot_print(array):
-    """Pretty print a binary or boolean array."""
-    for row in array:
-        print("".join(" #"[i] for i in row))
-
-
-def shiftmod(n, m, shift=1):
-    """Simlar to n % m except the result lies within [shift, m + shift).
-
-    Examples
-    --------
-    ```py
-    shiftmod(10, 10, shift=1) == 10
-    shiftmod(11, 10, shift=1) == 1
-    shiftmod(11, 10, shift=2) == 11
-    shiftmod(12, 10, shift=2) == 2
-    ```
-    """
-    return (n - shift) % m + shift
-
-
-def ilen(iterable):
-    """Return number of items in `iterable`.
-
-    This will consume the iterable.
-    """
-    return sum(1 for _ in iterable)
-
-
-def nth(iterable, n):
-    """Return nth item of `iterable`."""
-    from itertools import islice
-
-    return next(islice(iterable, n, None))
+    return zip(a, islice(b, offset, None))
 
 
 def partitions(n, r):
@@ -245,20 +257,38 @@ def shift_cipher(text, n):
     return "".join(map(_shift_letter, text))
 
 
-def split(sequence, n=2):
-    """Split a sequence into `n` equal parts. `n` is assumed to divide the
-    length of the sequence.
+def shiftmod(n, m, shift=1):
+    """Simlar to n % m except the result lies within [shift, m + shift).
+
+    Examples
+    --------
+    ```py
+    shiftmod(10, 10, shift=1) == 10
+    shiftmod(11, 10, shift=1) == 1
+    shiftmod(11, 10, shift=2) == 11
+    shiftmod(12, 10, shift=2) == 2
+    ```
+
     """
-    div = len(sequence) // n
-    return (sequence[i * div : (i + 1) * div] for i in range(n))
+    return (n - shift) % m + shift
 
 
-def distribute(iterable, n):
-    """Distribute an iterable amoung `n` smaller iterables."""
+def sliding_window(iterable, length=2):
+    """Return a sliding window over an iterable."""
     from itertools import islice, tee
 
-    children = tee(iterable, n)
-    return [islice(it, index, None, n) for index, it in enumerate(children)]
+    its = (islice(it, i, None) for i, it in enumerate(tee(iterable, length)))
+
+    return zip(*its)
+
+
+def sliding_window_cycle(iterable, length=2):
+    """Return a sliding window over an iterable that wraps around."""
+    from itertools import chain, islice
+
+    it = iter(iterable)
+    start = tuple(islice(it, length - 1))
+    return sliding_window(chain(start, it, start), length)
 
 
 def spiral_grid():
@@ -276,3 +306,11 @@ def spiral_grid():
 
         d *= -1
         m += 1
+
+
+def split(sequence, n=2):
+    """Split a sequence into `n` equal parts. `n` is assumed to divide the
+    length of the sequence.
+    """
+    div = len(sequence) // n
+    return (sequence[i * div : (i + 1) * div] for i in range(n))
