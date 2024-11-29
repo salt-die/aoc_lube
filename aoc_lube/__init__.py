@@ -14,7 +14,7 @@ import tomlkit
 
 from . import utils
 
-__all__ = ["setup_dir", "fetch", "submit", "utils"]
+__all__ = ["fetch", "setup_dir", "submit", "utils"]
 
 __version__ = "1.1.0"
 
@@ -25,7 +25,7 @@ if not CONFIG_DIR.exists():
 HEADERS = {
     "User-Agent": (
         f"github.com/salt-die/aoc_lube v{__version__} by salt-die@protonmail.com"
-    )
+    ),
 }
 SUBMISSIONS_FILE = "submissions.toml"
 TEMPLATE_FILE = Path(__file__).parent / "code_template.txt"
@@ -58,7 +58,7 @@ except FileNotFoundError:
         f"\n{BOLD}{RED}::WARNING::{RESET}\n\n"
         f"Token not found at {BLUE}{TOKEN_FILE.absolute()}{RESET}.\n"
         "`fetch` and `submit` functions will fail without a user token.\n"
-        f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n"
+        f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n",
     )
 
 
@@ -102,9 +102,10 @@ def fetch(year: int, day: int, open_with: Literal["vscode"] | None = None) -> st
     """
     _fix_old_inputs(year)
 
-    input_file = CONFIG_DIR / f"{year}" / f"{day:02}.txt"
-    if not input_file.parent.exists():
-        input_file.mkdir()
+    year_dir=CONFIG_DIR / f"{year}"
+    if not year_dir.exists():
+        year_dir.mkdir()
+    input_file = year_dir / f"{day:02}.txt"
 
     if input_file.exists():
         input_ = input_file.read_text()
@@ -125,13 +126,13 @@ def fetch(year: int, day: int, open_with: Literal["vscode"] | None = None) -> st
     if open_with is not None:
         # Open an issue to add a command to open the input file in your favorite editor.
         editors = {"vscode": ["code", "-r"]}
-        subprocess.run([*editors[open_with], input_file], shell=True)
+        subprocess.run([*editors[open_with], input_file], shell=True, check=False)
 
     return input_
 
 
 def submit(
-    year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_check=True
+    year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_check=True,
 ) -> None:
     """Submit a solution.
 
@@ -148,7 +149,7 @@ def submit(
     if "solution" in current:
         print(
             f"Day {day}, part {part} has already been solved. "
-            f"The solution was:\n{current['solution']}"
+            f"The solution was:\n{current['solution']}",
         )
         return
 
@@ -161,7 +162,7 @@ def submit(
     if answer in current:
         print(
             f"Solution {answer} to part {part} has already been submitted,"
-            " response was:"
+            " response was:",
         )
         _pretty_print(current[answer])
         return
