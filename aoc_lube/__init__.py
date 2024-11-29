@@ -58,7 +58,7 @@ except FileNotFoundError:
         f"\n{BOLD}{RED}::WARNING::{RESET}\n\n"
         f"Token not found at {BLUE}{TOKEN_FILE.absolute()}{RESET}.\n"
         "`fetch` and `submit` functions will fail without a user token.\n"
-        f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n",
+        f"See {YELLOW}README{RESET} for instructions on how to get your user token.\n"
     )
 
 
@@ -102,7 +102,7 @@ def fetch(year: int, day: int, open_with: Literal["vscode"] | None = None) -> st
     """
     _fix_old_inputs(year)
 
-    year_dir=CONFIG_DIR / f"{year}"
+    year_dir = CONFIG_DIR / f"{year}"
     if not year_dir.exists():
         year_dir.mkdir()
     input_file = year_dir / f"{day:02}.txt"
@@ -132,7 +132,11 @@ def fetch(year: int, day: int, open_with: Literal["vscode"] | None = None) -> st
 
 
 def submit(
-    year: int, day: int, part: Literal[1, 2], solution: Callable, sanity_check=True,
+    year: int,
+    day: int,
+    part: Literal[1, 2],
+    solution: Callable,
+    sanity_check=True,
 ) -> None:
     """Submit a solution.
 
@@ -149,7 +153,7 @@ def submit(
     if "solution" in current:
         print(
             f"Day {day}, part {part} has already been solved. "
-            f"The solution was:\n{current['solution']}",
+            f"The solution was:\n{current['solution']}"
         )
         return
 
