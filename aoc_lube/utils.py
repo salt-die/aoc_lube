@@ -85,10 +85,12 @@ def chinese_remainder_theorem(moduli, residues):
     )
 
 
-def chunk(it, n: int):
+def chunk(it, n: int, fillvalue=None):
     """Chunk an iterable into non-overlapping fixed sized pieces."""
+    from itertools import zip_longest
+
     args = [iter(it)] * n
-    return zip(*args, strict=True)
+    return zip_longest(*args, fillvalue=fillvalue)
 
 
 def distribute(iterable, n):
