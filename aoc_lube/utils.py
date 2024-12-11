@@ -16,6 +16,7 @@ __all__ = [
     "ilen",
     "int_grid",
     "maximum_matching",
+    "ndigits",
     "nth",
     "oscillate_range",
     "pairwise",
@@ -188,6 +189,13 @@ def maximum_matching(items: dict[list]):
     for k, v in nx.bipartite.maximum_matching(G, top_nodes=items).items():
         if k in items:  # Filter edges pointing the wrong direction.
             yield k, v
+
+
+def ndigits(n: int) -> int:
+    """Return the number of digits in ``n``."""
+    from math import log10
+
+    return int(log10(n)) + 1
 
 
 def nth(iterable, n):
