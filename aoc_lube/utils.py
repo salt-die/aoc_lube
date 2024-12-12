@@ -3,9 +3,13 @@
 Imports are deferred so that this file loads faster. Requires `networkx` and `numpy`.
 """
 
+from collections.abc import Iterable, Iterator, ValuesView
+from typing import Final, Literal, NamedTuple, Self
+
 __all__ = [
     "GRID_NEIGHBORHOODS",
-    "Point",
+    "UnionFind",
+    "Vec2",
     "chinese_remainder_theorem",
     "chunk",
     "distribute",
@@ -29,46 +33,149 @@ __all__ = [
     "split",
 ]
 
-GRID_NEIGHBORHOODS = {
-    4: [(0, 1), (0, -1), (1, 0), (-1, 0)],
-    5: [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)],
-    8: [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)],
-    9: [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)],
-}
+
+class UnionFind[T]:
+    """A collection for fast unions of disjoint sets."""
+
+    def __init__(self, iterable=Iterable[T] | None):
+        self._parents: dict[T, T] = {}
+        self._ranks: dict[T, int] = {}
+        self._components: dict[T, set[T]] = {}
+
+        if iterable is not None:
+            for item in iterable:
+                self.add(item)
+
+    @property
+    def components(self) -> ValuesView[set[T]]:
+        """Return the disjoint sets."""
+        return self._components.values()
+
+    @property
+    def size(self) -> int:
+        """Number of items in all disjoint sets."""
+        return len(self._parents)
+
+    def __contains__(self, item: T) -> bool:
+        return item in self._parents
+
+    def __len__(self) -> int:
+        return len(self._components)
+
+    def __getitem__(self, item: T) -> T:
+        if item not in self:
+            raise KeyError(item)
+
+        root = self._find(item)
+        return self._components[root]
+
+    def __iter__(self) -> Iterator[T]:
+        yield from self._parents
+
+    def add(self, item: T) -> None:
+        """Add a new item to the disjoint set forest."""
+        if item in self:
+            return
+        self._parents[item] = item
+        self._ranks[item] = 0
+        self._components[item] = {item}
+
+    def _find(self, item: T) -> T:
+        """Find the representive of the item's disjoint set."""
+        if item not in self:
+            raise KeyError(item)
+
+        if self._parents[item] != item:
+            self._parents[item] = self._find(self._parents[item])
+        return self._parents[item]
+
+    def merge(self, a: T, b: T) -> None:
+        """Merge the set containing ``a`` and the set containing ``b``."""
+        a_root = self._find(a)
+        b_root = self._find(b)
+        if a_root == b_root:
+            return
+
+        if self._ranks[a_root] < self._ranks[b_root]:
+            self._parents[a_root] = b_root
+            self._components[b_root] |= self._components.pop(a_root)
+        elif self._ranks[a_root] > self._ranks[b_root]:
+            self._parents[b_root] = a_root
+            self._components[a_root] |= self._components.pop(b_root)
+        else:
+            self._parents[a_root] = b_root
+            self._ranks[b_root] += 1
+            self._components[b_root] |= self._components.pop(a_root)
 
 
-class Point:
+class Vec2(NamedTuple):
     """A 2D point."""
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    y: int
+    x: int
 
-    def __repr__(self):
-        return f"Point(x={self.x}, y={self.y})"
+    def __add__(self, other: tuple[int, int]) -> Self:
+        y1, x1 = self
+        y2, x2 = other
+        return Vec2(y1 + y2, x1 + x2)
 
-    def __iter__(self):
-        yield self.x
-        yield self.y
+    def __sub__(self, other: tuple[int, int]) -> Self:
+        y1, x1 = self
+        y2, x2 = other
+        return Vec2(y1 - y2, x1 - x2)
 
-    def __add__(self, other):
-        return Point(self.x + other.x, self.y + other.y)
+    def __neg__(self) -> Self:
+        y, x = self
+        return Vec2(-y, -x)
 
-    def __sub__(self, other):
-        return Point(self.x - other.x, self.y - other.y)
+    def __mul__(self, n: int) -> Self:
+        y, x = self
+        return Vec2(n * y, n * x)
 
-    def __neg__(self):
-        return Point(-self.x, -self.y)
+    def rotate(self, clockwise: bool = True) -> Self:
+        """Rotate vector 90 degrees."""
+        y, x = self
+        if clockwise:
+            return Vec2(x, -y)
+        return Vec2(-x, y)
 
-    def __iadd__(self, other):
-        self.x += other.x
-        self.y += other.y
-        return self
+    def inbounds(self, size: tuple[int, int], pos: tuple[int, int] = (0, 0)) -> bool:
+        """Return whether vec is within some rect."""
+        y, x = self
+        h, w = size
+        oy, ox = pos
+        return 0 <= y - oy < h and 0 <= x - ox < w
 
-    def __isub__(self, other):
-        self.x -= other.x
-        self.y -= other.y
-        return self
+    @classmethod
+    def iter_rect(
+        self, size: tuple[int, int], pos: tuple[int, int] = (0, 0)
+    ) -> Iterator[Self]:
+        """Generate all points in some rect."""
+        h, w = size
+        oy, ox = pos
+        for y in range(h):
+            for x in range(w):
+                yield Vec2(y + oy, x + ox)
+
+    def adj(self, neighborhood: Literal[4, 5, 8, 9] = 4) -> Iterator[Self]:
+        """Yield adjacent points given by neighborhood."""
+        return (pos + self for pos in GRID_NEIGHBORHOODS[neighborhood])
+
+
+# fmt: off
+GRID_NEIGHBORHOODS: Final = {
+    4: [Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)],
+    5: [Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)],
+    8: [
+        Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
+        Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
+    ],
+    9: [
+        Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
+        Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
+    ],
+}
+# fmt: on
 
 
 def chinese_remainder_theorem(moduli, residues):

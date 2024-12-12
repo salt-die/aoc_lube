@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "aoc_lube"
 description = "Proper Advent of Code lubricant."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "Unlicense"}
 authors = [{name = "salt-die", email = "salt-die@protonmail.com"}]
 urls = {"repository" = "https://github.com/salt-die/aoc_lube"}
