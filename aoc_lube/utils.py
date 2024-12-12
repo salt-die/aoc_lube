@@ -70,7 +70,12 @@ class UnionFind[T]:
         return self._components[root]
 
     def __iter__(self) -> Iterator[T]:
-        yield from self._parents
+        """Yield each disjoint set."""
+        yield from self._components
+
+    def elements(self) -> Iterator[T]:
+        """Yield each element of each disjoint set."""
+        yield from self._parents.keys()
 
     def add(self, item: T) -> None:
         """Add a new item to the disjoint set forest."""
