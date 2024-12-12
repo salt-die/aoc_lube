@@ -66,10 +66,10 @@ class UnionFind[T]:
         if item not in self:
             raise KeyError(item)
 
-        root = self._find(item)
+        root = self.find(item)
         return self._components[root]
 
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterator[set[T]]:
         """Yield each disjoint set."""
         yield from self._components
 
@@ -85,19 +85,19 @@ class UnionFind[T]:
         self._ranks[item] = 0
         self._components[item] = {item}
 
-    def _find(self, item: T) -> T:
+    def find(self, item: T) -> T:
         """Find the representive of the item's disjoint set."""
         if item not in self:
             raise KeyError(item)
 
         if self._parents[item] != item:
-            self._parents[item] = self._find(self._parents[item])
+            self._parents[item] = self.find(self._parents[item])
         return self._parents[item]
 
     def merge(self, a: T, b: T) -> None:
         """Merge the set containing ``a`` and the set containing ``b``."""
-        a_root = self._find(a)
-        b_root = self._find(b)
+        a_root = self.find(a)
+        b_root = self.find(b)
         if a_root == b_root:
             return
 
