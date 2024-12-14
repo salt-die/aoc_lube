@@ -119,13 +119,17 @@ class Vec2(NamedTuple):
     y: int
     x: int
 
-    def __add__(self, other: tuple[int, int]) -> Self:
+    def __add__(self, other: int | tuple[int, int]) -> Self:
         y1, x1 = self
+        if isinstance(other, int):
+            return Vec2(y1 + other, x1 + other)
         y2, x2 = other
         return Vec2(y1 + y2, x1 + x2)
 
-    def __sub__(self, other: tuple[int, int]) -> Self:
+    def __sub__(self, other: int | tuple[int, int]) -> Self:
         y1, x1 = self
+        if isinstance(other, int):
+            return Vec2(y1 - other, x1 - other)
         y2, x2 = other
         return Vec2(y1 - y2, x1 - x2)
 
@@ -136,6 +140,10 @@ class Vec2(NamedTuple):
     def __mul__(self, n: int) -> Self:
         y, x = self
         return Vec2(n * y, n * x)
+
+    def __floordiv__(self, n: int) -> Self:
+        y, x = self
+        return Vec2(y // n, x // n)
 
     def rotate(self, clockwise: bool = True) -> Self:
         """Rotate vector 90 degrees."""
