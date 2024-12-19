@@ -37,7 +37,7 @@ __all__ = [
 class UnionFind[T]:
     """A collection for fast unions of disjoint sets."""
 
-    def __init__(self, iterable=Iterable[T] | None):
+    def __init__(self, iterable: Iterable[T] | None = None):
         self._parents: dict[T, T] = {}
         self._ranks: dict[T, int] = {}
         self._components: dict[T, set[T]] = {}
