@@ -1,10 +1,14 @@
-"""Helpful functions for AoC.
+"""Helpful functions for AoC."""
 
-Imports are deferred so that this file loads faster. Requires `networkx` and `numpy`.
-"""
-
+import re
 from collections.abc import Iterable, Iterator, ValuesView
+from itertools import chain, islice, tee, zip_longest
+from math import log10, prod
 from typing import Final, Literal, NamedTuple, Self
+
+import networkx as nx
+import numpy as np
+from numpy.typing import NDArray
 
 __all__ = [
     "GRID_NEIGHBORHOODS",
@@ -22,7 +26,6 @@ __all__ = [
     "maximum_matching",
     "ndigits",
     "nth",
-    "oscillate_range",
     "pairwise",
     "partitions",
     "shift_cipher",
@@ -145,6 +148,11 @@ class Vec2(NamedTuple):
         y, x = self
         return Vec2(y // n, x // n)
 
+    def __abs__(self) -> int:
+        """Length of vec with manhattan metric."""
+        y, x = self
+        return abs(y) + abs(x)
+
     def rotate(self, clockwise: bool = True) -> Self:
         """Rotate vector 90 degrees."""
         y, x = self
@@ -177,24 +185,22 @@ class Vec2(NamedTuple):
 
 # fmt: off
 GRID_NEIGHBORHOODS: Final = {
-    4: [Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)],
-    5: [Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)],
-    8: [
+    4: (Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)),
+    5: (Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)),
+    8: (
         Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
         Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
-    ],
-    9: [
+    ),
+    9: (
         Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
         Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
-    ],
+    ),
 }
 # fmt: on
 
 
-def chinese_remainder_theorem(moduli, residues):
+def chinese_remainder_theorem(moduli: list[int], residues: list[int]) -> int:
     """Find the solution to a system of modular equations."""
-    from math import prod
-
     N = prod(moduli)
 
     return (
@@ -206,33 +212,33 @@ def chinese_remainder_theorem(moduli, residues):
     )
 
 
-def chunk(it, n: int, fillvalue=None):
+def chunk[T](
+    iterable: Iterable[T], n: int, fillvalue: T | None = None
+) -> Iterator[T | None]:
     """Chunk an iterable into non-overlapping fixed sized pieces."""
-    from itertools import zip_longest
-
-    args = [iter(it)] * n
+    args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
 
-def distribute(iterable, n):
+def distribute[T](iterable: Iterable[T], n: int) -> list[Iterator[T]]:
     """Distribute an iterable amoung `n` smaller iterables."""
-    from itertools import islice, tee
-
     children = tee(iterable, n)
     return [islice(it, index, None, n) for index, it in enumerate(children)]
 
 
-def dot_print(array):
+def dot_print(array) -> None:
     """Pretty print a binary or boolean array."""
     for row in array:
-        print("".join(" #"[i] for i in row))
+        print("".join(".#"[i] for i in row))
 
 
-def grid_steps(neighborhood, height, width):
-    """Yield all steps ((y, x), (y + dy, x + dx)) with dy, dx given by `neighborhood`.
+def grid_steps(
+    neighborhood: Literal[4, 5, 8, 9], height: int, width: int
+) -> Iterator[tuple[Vec2, Vec2]]:
+    """Yield all steps ((y, x), (y + dy, x + dx)) with dy, dx given by ``neighborhood``.
 
-    `neighborhood` is one of 4, 5, 8 or 9 (For Von-Neumann or Moore neighborhoods with
-    or without center cell. The number is the number of cells in the neighborhood.)
+    ``neighborhood`` is one of 4, 5, 8 or 9 for Von-Neumann or Moore neighborhoods with
+    or without center cell. The number is the number of cells in the neighborhood.
     """
     deltas = GRID_NEIGHBORHOODS[neighborhood]
 
@@ -243,49 +249,47 @@ def grid_steps(neighborhood, height, width):
                 new_x = x + dx
 
                 if 0 <= new_y < height and 0 <= new_x < width:
-                    yield (y, x), (new_y, new_x)
+                    yield Vec2(y, x), Vec2(new_y, new_x)
 
 
-def extract_ints(raw: str):
+def extract_ints(raw: str) -> Iterator[int]:
     """Extract integers from a string."""
-    import re
-
     return map(int, re.findall(r"(-?\d+)", raw))
 
 
-def extract_maze(raw: str, wall="#", largest_component=False):
-    """Parse an ascii maze into a networkx graph. Return a tuple
-    `(np.array, nx.Graph)`.
-    """
-    import networkx as nx
-    import numpy as np
-
+def extract_maze(
+    raw: str, wall="#", empty=".", largest_component=False
+) -> tuple[NDArray[np.str_], nx.Graph, dict[str, Vec2]]:
+    """Parse an ascii maze into a networkx graph."""
     lines = raw.splitlines()
+    points = {}
+    G = nx.Graph()
+    for y, line in enumerate(lines):
+        for x, char in enumerate(line):
+            if char == wall:
+                continue
+            G.add_node(Vec2(y, x))
+            if char != empty:
+                points.setdefault(char, []).append(Vec2(y, x))
+    G.add_edges_from((u, v) for u in G for v in u.adj() if v in G)
+
     max_width = max(map(len, lines))
     maze = np.array([list(line + " " * (max_width - len(line))) for line in lines])
-
-    G = nx.grid_graph(maze.shape[::-1])
-
-    walls = np.stack(np.where(maze == wall)).T
-    G.remove_nodes_from(map(tuple, walls))
 
     if largest_component:
         G.remove_nodes_from(
             G.nodes - max(nx.connected_components(G), key=lambda g: len(g))
         )
 
-    return maze, G
+    return maze, G, points
 
 
-def ilen(iterable):
-    """Return number of items in `iterable`.
-
-    This will consume the iterable.
-    """
+def ilen(iterable: Iterable) -> int:
+    """Return number of items in ``iterable``."""
     return sum(1 for _ in iterable)
 
 
-def int_grid(raw, np=True, separator=""):
+def int_grid(raw: str, np=True, separator="") -> list[list[int]] | NDArray[np.int64]:
     """Parse a grid of ints into a 2d list or numpy array (if np==True)."""
     array = [
         [int(i) for i in (line.split(separator) if separator else line) if i]
@@ -293,75 +297,39 @@ def int_grid(raw, np=True, separator=""):
     ]
 
     if np:
-        import numpy as np
-
         return np.array(array)
 
     return array
 
 
-def maximum_matching(items: dict[list]):
+def maximum_matching[T](items: dict[T, list[T]]) -> Iterator[tuple[T, T]]:
     """Return a maximum matching from a dict of lists."""
-    import networkx as nx
-
     G = nx.from_dict_of_lists(items)
 
-    for k, v in nx.bipartite.maximum_matching(G, top_nodes=items).items():
+    for k, v in nx.bipartite.hopcroft_karp_matching(G, top_nodes=items).items():
         if k in items:  # Filter edges pointing the wrong direction.
             yield k, v
 
 
 def ndigits(n: int) -> int:
     """Return the number of digits in ``n``."""
-    from math import log10
-
     return int(log10(n)) + 1
 
 
-def nth(iterable, n):
-    """Return nth item of `iterable`."""
-    from itertools import islice
-
+def nth[T](iterable: Iterable[T], n: int) -> T:
+    """Return nth item of ``iterable``."""
     return next(islice(iterable, n, None))
 
 
-def oscillate_range(start=None, stop=None, step=None, /):
-    """Yield values around start."""
-    match start, stop, step:
-        case (int(), None, None):
-            start, stop, step = 0, start, 1 if start > 0 else -1
-        case (int(), int(), None):
-            step = 1 if start < stop else -1
-        case (int(), int(), int()) if step != 0:
-            pass
-        case _:
-            ValueError(f"non-integer values or 0 step ({start=}, {stop=}, {step=})")
-
-    stop_n = (stop - start) // step
-
-    if stop_n <= 0:
-        return
-
-    yield start
-
-    n = 1
-    while n < stop_n:
-        yield start + step * n
-        yield start - step * n
-        n += 1
-
-
-def pairwise(iterable, offset=1):
+def pairwise[T](iterable: Iterable[T], offset: int = 1) -> Iterator[T]:
     """Return successive pairs from an iterable separated by `offset`."""
-    from itertools import islice, tee
-
     a, b = tee(iterable)
 
     return zip(a, islice(b, offset, None))
 
 
-def partitions(n, r):
-    """Generate integer partitions of  `n` into `r` parts."""
+def partitions(n: int, r: int) -> Iterator[tuple[int, ...]]:
+    """Generate integer partitions of  ``n`` into ``r`` parts."""
     if r == 1:
         yield (n,)
         return
@@ -371,8 +339,8 @@ def partitions(n, r):
             yield i, *j
 
 
-def shift_cipher(text, n):
-    """Shift all letters `n` characters in text."""
+def shift_cipher(text: str, n: int) -> str:
+    """Shift all letters ``n`` characters in text."""
 
     def _shift_letter(letter):
         if letter.isupper():
@@ -387,7 +355,7 @@ def shift_cipher(text, n):
     return "".join(map(_shift_letter, text))
 
 
-def shiftmod(n, m, shift=1):
+def shiftmod(n: int, m: int, shift: int = 1) -> int:
     """Simlar to n % m except the result lies within [shift, m + shift).
 
     Examples
@@ -403,44 +371,45 @@ def shiftmod(n, m, shift=1):
     return (n - shift) % m + shift
 
 
-def sliding_window(iterable, length=2):
+def sliding_window[T](
+    iterable: Iterable[T], length: int = 2
+) -> Iterator[tuple[T, ...]]:
     """Return a sliding window over an iterable."""
-    from itertools import islice, tee
-
     its = (islice(it, i, None) for i, it in enumerate(tee(iterable, length)))
 
     return zip(*its)
 
 
-def sliding_window_cycle(iterable, length=2):
+def sliding_window_cycle[T](
+    iterable: Iterable[T], length: int = 2
+) -> Iterator[tuple[int, ...]]:
     """Return a sliding window over an iterable that wraps around."""
-    from itertools import chain, islice
-
     it = iter(iterable)
     start = tuple(islice(it, length - 1))
     return sliding_window(chain(start, it, start), length)
 
 
-def spiral_grid():
+def spiral_grid() -> Iterator[Vec2]:
     """Yield 2D coordinates spiraling around the origin."""
     x = y = 0
     d = m = 1
     while True:
         while 2 * x * d < m:
-            yield x, y
-            x = x + d
+            yield Vec2(x, y)
+            x += d
 
         while 2 * y * d < m:
-            yield x, y
-            y = y + d
+            yield Vec2(x, y)
+            y += d
 
         d *= -1
         m += 1
 
 
-def split(sequence, n=2):
-    """Split a sequence into `n` equal parts. `n` is assumed to divide the
-    length of the sequence.
+def split[T](sequence: list[T], n: int = 2) -> Iterator[list[T]]:
+    """Split a sequence into ``n`` equal parts.
+
+    ``n`` is assumed to divide the length of the sequence.
     """
     div = len(sequence) // n
     return (sequence[i * div : (i + 1) * div] for i in range(n))
