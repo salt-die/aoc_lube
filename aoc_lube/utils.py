@@ -187,15 +187,18 @@ class Vec2(NamedTuple):
 
 # fmt: off
 GRID_NEIGHBORHOODS: Final = {
-    4: (Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)),
-    5: (Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0)),
+    4: (Vec2( 0,  1), Vec2( 0, -1), Vec2( 1,  0), Vec2(-1,  0)),
+    5: (Vec2( 0,  1), Vec2( 0, -1), Vec2( 1,  0), Vec2(-1,  0),
+        Vec2( 0,  0),
+    ),
     8: (
-        Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
-        Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
+        Vec2( 0,  1), Vec2( 0, -1), Vec2( 1,  0), Vec2(-1,  0),
+        Vec2( 1,  1), Vec2(-1, -1), Vec2( 1, -1), Vec2(-1,  1),
     ),
     9: (
-        Vec2(0, 0), Vec2(0, 1), Vec2(0, -1), Vec2(1, 0), Vec2(-1, 0),
-        Vec2(1, 1), Vec2(-1, -1), Vec2(1, -1), Vec2(-1, 1),
+        Vec2( 0,  1), Vec2( 0, -1), Vec2( 1,  0), Vec2(-1,  0),
+        Vec2( 1,  1), Vec2(-1, -1), Vec2( 1, -1), Vec2(-1,  1),
+        Vec2( 0,  0),
     ),
 }
 # fmt: on
