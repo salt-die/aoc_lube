@@ -16,8 +16,10 @@ __all__ = [
     "Vec2",
     "chinese_remainder_theorem",
     "chunk",
+    "diff",
     "distribute",
     "dot_print",
+    "first_unique",
     "grid_steps",
     "extract_ints",
     "extract_maze",
@@ -220,8 +222,16 @@ def chunk[T](
     return zip_longest(*args, fillvalue=fillvalue)
 
 
+def diff(iterable: Iterable[int]) -> Iterator[int]:
+    """Return the pairwise differences of ``iterable``.
+
+    For instance, ``a, b, c, d`` is transformed into ``b - a, c - b, d - c``.
+    """
+    return (b - a for a, b in pairwise(iterable))
+
+
 def distribute[T](iterable: Iterable[T], n: int) -> list[Iterator[T]]:
-    """Distribute an iterable amoung `n` smaller iterables."""
+    """Distribute an iterable amoung ``n`` smaller iterables."""
     children = tee(iterable, n)
     return [islice(it, index, None, n) for index, it in enumerate(children)]
 
@@ -230,6 +240,19 @@ def dot_print(array) -> None:
     """Pretty print a binary or boolean array."""
     for row in array:
         print("".join(".#"[i] for i in row))
+
+
+def first_unique[T](iterable: Iterable[T]) -> Iterator[T]:
+    """Yield only unique items from ``iterable``.
+
+    For instance, ``a, b, c, b, a, d, e, c`` is transformed into ``a, b, c, d, e``.
+    """
+    seen = set()
+    for item in iterable:
+        if item in seen:
+            continue
+        yield item
+        seen.add(item)
 
 
 def grid_steps(
