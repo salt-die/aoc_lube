@@ -186,7 +186,10 @@ def submit(
         if not response.ok:
             raise ValueError("Request failed.")
 
-        message = bs4.BeautifulSoup(response.text, "html.parser").article.text
+        article = bs4.BeautifulSoup(response.text, "html.parser").article
+        if article is None:
+            raise ValueError("Failed to parse response.")
+        message: str = article.text
         _pretty_print(message)
 
         if message[4] == "g":  # "You gave an answer too recently"
@@ -251,7 +254,7 @@ def _wait_for_unlock(year, day):
             print(SHOW_CURSOR)
 
 
-def _pretty_print(message):
+def _pretty_print(message: str) -> None:
     """Color submission response."""
     match message[7]:
         case "t":
