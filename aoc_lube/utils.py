@@ -1,5 +1,8 @@
 """Helpful functions for AoC."""
 
+from __future__ import annotations
+
+import importlib
 import re
 from collections.abc import Iterable, Iterator, ValuesView
 from itertools import chain, islice, tee, zip_longest
@@ -67,7 +70,7 @@ class UnionFind[T]:
     def __len__(self) -> int:
         return len(self._components)
 
-    def __getitem__(self, item: T) -> T:
+    def __getitem__(self, item: T) -> set[T]:
         if item not in self:
             raise KeyError(item)
 
@@ -76,7 +79,7 @@ class UnionFind[T]:
 
     def __iter__(self) -> Iterator[set[T]]:
         """Yield each disjoint set."""
-        yield from self._components
+        yield from self._components.values()
 
     def elements(self) -> Iterator[T]:
         """Yield each element of each disjoint set."""
@@ -124,29 +127,29 @@ class Vec2(NamedTuple):
     y: int
     x: int
 
-    def __add__(self, other: int | tuple[int, int]) -> Self:
+    def __add__(self, other: int | tuple[int, int]) -> Vec2:  # type: ignore
         y1, x1 = self
         if isinstance(other, int):
             return Vec2(y1 + other, x1 + other)
         y2, x2 = other
         return Vec2(y1 + y2, x1 + x2)
 
-    def __sub__(self, other: int | tuple[int, int]) -> Self:
+    def __sub__(self, other: int | tuple[int, int]) -> Vec2:
         y1, x1 = self
         if isinstance(other, int):
             return Vec2(y1 - other, x1 - other)
         y2, x2 = other
         return Vec2(y1 - y2, x1 - x2)
 
-    def __neg__(self) -> Self:
+    def __neg__(self) -> Vec2:
         y, x = self
         return Vec2(-y, -x)
 
-    def __mul__(self, n: int) -> Self:
+    def __mul__(self, n: int) -> Vec2:  # type: ignore
         y, x = self
         return Vec2(n * y, n * x)
 
-    def __floordiv__(self, n: int) -> Self:
+    def __floordiv__(self, n: int) -> Vec2:
         y, x = self
         return Vec2(y // n, x // n)
 
@@ -155,7 +158,7 @@ class Vec2(NamedTuple):
         y, x = self
         return abs(y) + abs(x)
 
-    def rotate(self, clockwise: bool = True) -> Self:
+    def rotate(self, clockwise: bool = True) -> Vec2:
         """Rotate vector 90 degrees."""
         y, x = self
         if clockwise:
@@ -171,16 +174,16 @@ class Vec2(NamedTuple):
 
     @classmethod
     def iter_rect(
-        self, size: tuple[int, int], pos: tuple[int, int] = (0, 0)
+        cls, size: tuple[int, int], pos: tuple[int, int] = (0, 0)
     ) -> Iterator[Self]:
         """Generate all points in some rect."""
         h, w = size
         oy, ox = pos
         for y in range(h):
             for x in range(w):
-                yield Vec2(y + oy, x + ox)
+                yield cls(y + oy, x + ox)
 
-    def adj(self, neighborhood: Literal[4, 5, 8, 9] = 4) -> Iterator[Self]:
+    def adj(self, neighborhood: Literal[4, 5, 8, 9] = 4) -> Iterator[Vec2]:
         """Yield adjacent points given by neighborhood."""
         return (pos + self for pos in GRID_NEIGHBORHOODS[neighborhood])
 
@@ -222,7 +225,7 @@ def chunk[T](
 ) -> Iterator[T | None]:
     """Chunk an iterable into non-overlapping fixed sized pieces."""
     args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*args, fillvalue=fillvalue)  # type: ignore
 
 
 def diff(iterable: Iterable[int]) -> Iterator[int]:
@@ -323,14 +326,15 @@ def int_grid(raw: str, np=True, separator="") -> list[list[int]] | NDArray[np.in
     ]
 
     if np:
-        return np.array(array)
+        # can't use np.array here because of shadowing
+        return importlib.import_module("np").array
 
     return array
 
 
 def maximum_matching[T](items: dict[T, list[T]]) -> Iterator[tuple[T, T]]:
     """Return a maximum matching from a dict of lists."""
-    G = nx.from_dict_of_lists(items)
+    G = nx.from_dict_of_lists(items)  # type: ignore
 
     for k, v in nx.bipartite.hopcroft_karp_matching(G, top_nodes=items).items():
         if k in items:  # Filter edges pointing the wrong direction.
@@ -347,7 +351,7 @@ def nth[T](iterable: Iterable[T], n: int) -> T:
     return next(islice(iterable, n, None))
 
 
-def pairwise[T](iterable: Iterable[T], offset: int = 1) -> Iterator[T]:
+def pairwise[T](iterable: Iterable[T], offset: int = 1) -> Iterator[tuple[T, T]]:
     """Return successive pairs from an iterable separated by `offset`."""
     a, b = tee(iterable)
 
@@ -408,7 +412,7 @@ def sliding_window[T](
 
 def sliding_window_cycle[T](
     iterable: Iterable[T], length: int = 2
-) -> Iterator[tuple[int, ...]]:
+) -> Iterator[tuple[T, ...]]:
     """Return a sliding window over an iterable that wraps around."""
     it = iter(iterable)
     start = tuple(islice(it, length - 1))

@@ -16,7 +16,7 @@ from . import utils
 
 __all__ = ["fetch", "setup_dir", "submit", "utils"]
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 
 CONFIG_DIR = Path.home() / ".aoc_lube"
 if not CONFIG_DIR.exists():
@@ -31,14 +31,14 @@ SUBMISSIONS_FILE = "submissions.toml"
 TEMPLATE_FILE = Path(__file__).parent / "code_template.txt"
 TOKEN_FILE = CONFIG_DIR / ".token"
 # AoC puzzle inputs unlock at midnight -5 UTC during month of December.
-UNLOCK_TIME_INFO = dict(
-    month=12,
-    hour=0,
-    minute=0,
-    second=5,
-    microsecond=0,
-    tzinfo=timezone(timedelta(hours=-5), "Eastern US"),
-)
+UNLOCK_TIME_INFO = {
+    "month": 12,
+    "hour": 0,
+    "minute": 0,
+    "second": 5,
+    "microsecond": 0,
+    "tzinfo": timezone(timedelta(hours=-5), "Eastern US"),
+}
 URL = "https://adventofcode.com/{year}/day/{day}"
 
 # Ansi Escapes
@@ -73,17 +73,17 @@ def setup_dir(year: int | None = None, template: Path | None = None) -> None:
         year = date.today().year
 
     if template is None:
-        template = TEMPLATE_FILE.read_text()
+        code = TEMPLATE_FILE.read_text()
     else:
-        template = template.read_text()
+        code = template.read_text()
 
-    for day in range(1, 26):
+    for day in range(1, 13):
         file = Path(f"day_{day:02}.py")
         if not file.exists():
-            file.write_text(template.format(year=year, day=day))
+            file.write_text(code.format(year=year, day=day))
 
 
-def _fix_old_inputs(year: int) -> bool:
+def _fix_old_inputs(year: int) -> None:
     input_file = CONFIG_DIR / f"{year}" / "inputs.toml"
 
     if input_file.exists():
@@ -190,7 +190,10 @@ def submit(
         _pretty_print(message)
 
         if message[4] == "g":  # "You gave an answer too recently"
-            minutes, seconds = re.search(r"(?:(\d+)m )?(\d+)s", message).groups()
+            time_match = re.search(r"(?:(\d+)m )?(\d+)s", message)
+            if time_match is None:
+                raise ValueError("Failed to parse response.")
+            minutes, seconds = time_match.groups()
 
             timeout = 60 * int(minutes or 0) + int(seconds)
             try:
