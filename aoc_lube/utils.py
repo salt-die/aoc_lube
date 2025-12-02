@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable, Iterator, ValuesView
 from itertools import chain, islice, tee, zip_longest
 from math import log10, prod
-from typing import Final, Literal, NamedTuple, Self
+from typing import Final, Literal, NamedTuple, Self, overload
 
 import networkx as nx
 import numpy as np
@@ -220,12 +220,22 @@ def chinese_remainder_theorem(moduli: list[int], residues: list[int]) -> int:
     )
 
 
-def chunk[T](
-    iterable: Iterable[T], n: int, fillvalue: T | None = None
-) -> Iterator[T | None]:
+@overload
+def chunk[T](iterable: Iterable[T], n: Literal[2]) -> Iterator[tuple[T, T]]: ...
+
+
+@overload
+def chunk[T](iterable: Iterable[T], n: Literal[3]) -> Iterator[tuple[T, T, T]]: ...
+
+
+@overload
+def chunk[T](iterable: Iterable[T], n: Literal[4]) -> Iterator[tuple[T, T, T, T]]: ...
+
+
+def chunk[T](iterable: Iterable[T], n: int) -> Iterator[tuple[T, ...]]:
     """Chunk an iterable into non-overlapping fixed sized pieces."""
     args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)  # type: ignore
+    return zip_longest(*args)
 
 
 def diff(iterable: Iterable[int]) -> Iterator[int]:
