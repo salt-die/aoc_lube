@@ -328,16 +328,15 @@ def ilen(iterable: Iterable) -> int:
     return sum(1 for _ in iterable)
 
 
-def int_grid(raw: str, np=True, separator="") -> list[list[int]] | NDArray[np.int64]:
+def int_grid(raw: str, numpy=True, separator="") -> list[list[int]] | NDArray[np.int64]:
     """Parse a grid of ints into a 2d list or numpy array (if np==True)."""
     array = [
         [int(i) for i in (line.split(separator) if separator else line) if i]
         for line in raw.splitlines()
     ]
 
-    if np:
-        # can't use np.array here because of shadowing
-        return importlib.import_module("np").array
+    if numpy:
+        return np.array(array)
 
     return array
 
