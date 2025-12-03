@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
 import re
 from collections.abc import Iterable, Iterator, ValuesView
 from itertools import chain, islice, tee, zip_longest
