@@ -254,7 +254,7 @@ def distribute[T](iterable: Iterable[T], n: int) -> list[Iterator[T]]:
 def dot_print(array) -> None:
     """Pretty print a binary or boolean array."""
     for row in array:
-        print("".join(".#"[i] for i in row))
+        print("".join(".#"[int(i)] for i in row))
 
 
 def first_unique[T](iterable: Iterable[T]) -> Iterator[T]:
